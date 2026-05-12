@@ -808,9 +808,9 @@
             <div class="menu-title">星际塔防</div>
             <div class="menu-subtitle">STAR DEFENSE</div>
             <div style="color:#718096;font-size:12px;margin-bottom:40px;">Sweet制作 · 创作不易 · 快来赞助 ❤️</div>
-            <button class="menu-btn primary" onclick="showScreen('modeSelect')">🎮 开始游戏</button>
-            <button class="menu-btn" onclick="showScreen('helpScreen')">📖 帮助</button>
-            <button class="menu-btn" onclick="showScreen('aboutScreen')">ℹ️ 关于</button>
+            <button class="menu-btn primary" onclick="initAudio();showScreen('modeSelect')">🎮 开始游戏</button>
+            <button class="menu-btn" onclick="initAudio();showScreen('helpScreen')">📖 帮助</button>
+            <button class="menu-btn" onclick="initAudio();showScreen('aboutScreen')">ℹ️ 关于</button>
             <button class="menu-btn danger" onclick="exitGame()">🚪 退出游戏</button>
         </div>
     </div>
@@ -821,7 +821,7 @@
             <div class="menu-title" style="font-size:30px;margin-bottom:6px;">选择难度</div>
             <div class="menu-subtitle" style="margin-bottom:30px;">SELECT DIFFICULTY</div>
 
-            <div class="mode-card easy" onclick="startGameWithMode('easy')">
+            <div class="mode-card easy" onclick="initAudio();startGameWithMode('easy')">
                 <div class="mode-card-name">🟢 简易</div>
                 <div class="mode-card-desc">适合新手，敌人较弱，10波通关</div>
                 <div class="mode-card-stats">
@@ -832,7 +832,7 @@
                 </div>
             </div>
 
-            <div class="mode-card normal" onclick="startGameWithMode('normal')">
+            <div class="mode-card normal" onclick="initAudio();startGameWithMode('normal')">
                 <div class="mode-card-name">🔵 普通</div>
                 <div class="mode-card-desc">标准难度，考验策略搭配，20波通关</div>
                 <div class="mode-card-stats">
@@ -843,7 +843,7 @@
                 </div>
             </div>
 
-            <div class="mode-card hard" onclick="startGameWithMode('hard')">
+            <div class="mode-card hard" onclick="initAudio();startGameWithMode('hard')">
                 <div class="mode-card-name">🔴 困难</div>
                 <div class="mode-card-desc">极限挑战，敌人凶猛，30波通关</div>
                 <div class="mode-card-stats">
@@ -854,7 +854,7 @@
                 </div>
             </div>
 
-            <div class="mode-card endless" onclick="startGameWithMode('endless')">
+            <div class="mode-card endless" onclick="initAudio();startGameWithMode('endless')">
                 <div class="mode-card-name">🟡 无尽</div>
                 <div class="mode-card-desc">没有终点，看你能撑多久</div>
                 <div class="mode-card-stats">
@@ -1188,6 +1188,7 @@
         }
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // iOS Safari: 必须在用户手势中 resume
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -1206,6 +1207,15 @@
             console.warn('音频初始化失败:', e);
             audioCtx = null;
         }
+    }
+
+    // 安全播放音效 - 确保 audioCtx 可用
+    function safeAudio() {
+        if (!audioCtx) { initAudio(); }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return !!audioCtx;
     }
 
     // 切换背景音乐
@@ -1329,7 +1339,7 @@
 
     // 基础炮塔射击 - 短促的"嘭"声
     function sfxShootBasic() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'square';
         osc.frequency.setValueAtTime(200, audioCtx.currentTime);
@@ -1345,7 +1355,7 @@
 
     // 冰冻塔射击 - 清脆的"叮"声
     function sfxShootIce() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
@@ -1361,7 +1371,7 @@
 
     // 火焰塔射击 - 低沉的"呼"声
     function sfxShootFire() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const bufferSize = audioCtx.sampleRate * 0.2;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -1385,7 +1395,7 @@
 
     // 激光塔射击 - 高频"滋"声
     function sfxShootLaser() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(2000, audioCtx.currentTime);
@@ -1406,7 +1416,7 @@
 
     // 超级激光 - 能量充能+释放声
     function sfxShootSuper() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         // 充能声
         const osc1 = audioCtx.createOscillator();
         osc1.type = 'sine';
@@ -1438,7 +1448,7 @@
 
     // 超级星舰射击音效 - 强力脉冲波
     function sfxShootStarship() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         // 低频冲击波
         const osc1 = audioCtx.createOscillator();
         osc1.type = 'sawtooth';
@@ -1468,7 +1478,7 @@
 
     // 怪物受击音效
     function sfxHit() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(300, audioCtx.currentTime);
@@ -1484,7 +1494,7 @@
 
     // 怪物死亡音效 - 爆炸声
     function sfxExplosion(big) {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const duration = big ? 0.5 : 0.25;
         const bufferSize = audioCtx.sampleRate * duration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -1508,7 +1518,7 @@
 
     // 波次开始音效 - 号角声
     function sfxWaveStart() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const notes = [330, 440, 550];
         notes.forEach((freq, i) => {
             const osc = audioCtx.createOscillator();
@@ -1532,7 +1542,7 @@
 
     // UI按钮点击音效
     function sfxClick() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sine';
         osc.frequency.value = 800;
@@ -1547,7 +1557,7 @@
 
     // 放置炮塔音效
     function sfxPlace() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(400, audioCtx.currentTime);
@@ -1563,7 +1573,7 @@
 
     // 金币不足音效
     function sfxNoGold() {
-        if (!sfxEnabled || !audioCtx) return;
+        if (!sfxEnabled || !safeAudio()) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'square';
         osc.frequency.setValueAtTime(200, audioCtx.currentTime);
@@ -4228,18 +4238,6 @@
     });
 
     window.addEventListener('resize', resize);
-
-    // 移动端：首次用户交互时激活音频
-    function activateAudio() { initAudio(); }
-    document.addEventListener('touchstart', activateAudio, { once: true, passive: true });
-    document.addEventListener('click', activateAudio, { once: true, passive: true });
-
-    // 页面从后台恢复时重新激活音频
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-    });
 
     // 启动游戏
     init();
