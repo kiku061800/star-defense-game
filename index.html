@@ -20,6 +20,13 @@
             overflow: hidden;
             font-family: 'Microsoft YaHei', sans-serif;
             background: #0a0a1a;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        * {
+            touch-action: manipulation;
         }
 
         /* 游戏容器 */
@@ -807,7 +814,7 @@
         <div class="menu-container">
             <div class="menu-title">星际塔防</div>
             <div class="menu-subtitle">STAR DEFENSE</div>
-            <div style="color:#667eea;font-size:13px;margin-bottom:40px;font-weight:bold;">测试版 v1.3</div>
+            <div style="color:#667eea;font-size:13px;margin-bottom:40px;font-weight:bold;">测试版 v1.4</div>
             <div style="color:#718096;font-size:11px;margin-top:-30px;margin-bottom:40px;">Sweet制作 · 创作不易 · 快来赞助 ❤️</div>
             <button class="menu-btn primary" onclick="initAudio();showScreen('modeSelect')">🎮 开始游戏</button>
             <button class="menu-btn" onclick="initAudio();showScreen('helpScreen')">📖 帮助</button>
@@ -1174,26 +1181,34 @@
     let musicEnabled = false;
     let sfxEnabled = true;
     let _ac = null;       // 全局AudioContext
+    let _acReady = false; // AudioContext是否真正可用
     let _bgmNodes = [];   // 背景音乐节点
     let _bgmTimer = null;
 
     // 获取/创建AudioContext（在用户手势中调用）
     function initAudio() {
         if (_ac) {
-            if (_ac.state === 'suspended') _ac.resume();
+            if (_ac.state === 'suspended') {
+                _ac.resume().then(function() { _acReady = true; });
+            }
             return;
         }
         try {
             _ac = new (window.AudioContext || window.webkitAudioContext)();
-            if (_ac.state === 'suspended') _ac.resume();
-        } catch(e) { _ac = null; }
+            if (_ac.state === 'running') {
+                _acReady = true;
+            } else {
+                _ac.resume().then(function() { _acReady = true; }).catch(function() {});
+            }
+        } catch(e) { _ac = null; _acReady = false; }
     }
 
     // 播放音调 - 轻量级，不卡顿
     function playTone(freq, type, dur, vol, freqEnd, delay) {
         if (!sfxEnabled || !_ac) return;
+        if (!_acReady) { initAudio(); return; }
         try {
-            if (_ac.state === 'suspended') _ac.resume();
+            if (_ac.state === 'suspended') { _ac.resume(); return; }
             var t = _ac.currentTime + (delay || 0);
             var o = _ac.createOscillator();
             o.type = type;
@@ -1214,8 +1229,9 @@
     // 播放噪声 - 轻量级
     function playNoise(dur, vol, filterFreq) {
         if (!sfxEnabled || !_ac) return;
+        if (!_acReady) { initAudio(); return; }
         try {
-            if (_ac.state === 'suspended') _ac.resume();
+            if (_ac.state === 'suspended') { _ac.resume(); return; }
             var sz = _ac.sampleRate * dur;
             var buf = _ac.createBuffer(1, sz, _ac.sampleRate);
             var d = buf.getChannelData(0);
@@ -3023,6 +3039,9 @@
         });
         sfxPlace();
         updateUI();
+        // 放置完成后清除选择，需要重新点击炮塔才能放置
+        game.selected = null;
+        document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
     }
 
     function removeTower(x, y) {
