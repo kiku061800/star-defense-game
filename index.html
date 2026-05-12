@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>星际塔防 - 增强版</title>
     <style>
         * {
@@ -20,12 +20,6 @@
             overflow: hidden;
             font-family: 'Microsoft YaHei', sans-serif;
             background: #0a0a1a;
-            -webkit-overflow-scrolling: touch;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
         }
 
         /* 游戏容器 */
@@ -140,12 +134,10 @@
         .tower-list {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden;
             padding: 10px;
             display: grid;
             grid-template-columns: 1fr;
             gap: 8px;
-            -webkit-overflow-scrolling: touch;
         }
 
         .tower-card {
@@ -217,8 +209,6 @@
             padding: 10px;
             background: rgba(10, 10, 25, 0.9);
             border-top: 1px solid rgba(102, 126, 234, 0.2);
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .wave-info {
@@ -334,9 +324,6 @@
             max-width: 420px;
             width: 90%;
             padding: 40px 30px;
-            max-height: 100vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .menu-title {
@@ -565,7 +552,144 @@
             box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
         }
 
-        /* 横屏手机 */        /* 横屏手机 */
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .header {
+                padding: 6px 10px;
+            }
+
+            .title {
+                font-size: 16px;
+            }
+
+            .stat-item {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+
+            .audio-btn {
+                padding: 4px 8px;
+                font-size: 14px;
+            }
+
+            .main-area {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: column;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            .sidebar-header {
+                display: none;
+            }
+
+            .tower-list {
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                gap: 5px;
+                padding: 6px 8px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .tower-list::-webkit-scrollbar { display: none; }
+
+            .tower-card {
+                flex-shrink: 0;
+                padding: 6px 10px;
+                border-radius: 10px;
+                min-width: 58px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+            }
+
+            .tower-header {
+                flex-direction: column;
+                gap: 2px;
+                margin-bottom: 0;
+            }
+
+            .tower-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 18px;
+            }
+
+            .tower-name {
+                font-size: 10px;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            .tower-stats {
+                display: none;
+            }
+
+            .tower-price {
+                margin-top: 2px;
+                padding: 2px 8px;
+                font-size: 9px;
+                border-radius: 8px;
+            }
+
+            .control-area {
+                padding: 4px 8px 6px;
+                min-width: unset;
+                overflow: hidden;
+            }
+
+            .wave-info {
+                display: none;
+            }
+
+            .mode-selector {
+                display: none;
+            }
+
+            .wave-number {
+                font-size: 24px;
+            }
+
+            .control-buttons {
+                display: flex;
+                flex-direction: row;
+                gap: 5px;
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+            .control-buttons::-webkit-scrollbar { display: none; }
+
+            .control-btn {
+                flex-shrink: 0;
+                padding: 8px 12px;
+                font-size: 12px;
+                border-radius: 16px;
+                white-space: nowrap;
+                min-height: 36px;
+            }
+
+            .game-over-content {
+                padding: 30px 20px;
+            }
+
+            .game-over-title {
+                font-size: 28px;
+            }
+
+            .game-over-stats {
+                font-size: 16px;
+            }
+        }
+
+        /* 横屏手机 */
         @media (max-width: 768px) and (orientation: landscape) {
             .main-area {
                 flex-direction: row;
@@ -575,18 +699,82 @@
                 width: 200px;
                 height: auto;
                 flex-direction: column;
+                padding-bottom: 0;
             }
 
             .tower-list {
+                display: grid;
                 grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+
+            .tower-card {
+                min-width: unset;
             }
 
             .tower-stats {
                 display: grid;
             }
+
+            .wave-info {
+                display: block;
+            }
+
+            .mode-selector {
+                display: flex;
+            }
+
+            .control-buttons {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
-        /* 触摸设备优化 */        /* 触摸设备优化 */
+        /* 超小屏幕适配 */
+        @media (max-width: 480px) {
+            .header {
+                padding: 4px 8px;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .title {
+                font-size: 14px;
+            }
+            .stats {
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+            .stat-item {
+                padding: 3px 6px;
+                font-size: 10px;
+            }
+            .audio-btn {
+                padding: 3px 6px;
+                font-size: 12px;
+            }
+            .tower-card {
+                min-width: 50px;
+                padding: 4px 6px;
+            }
+            .tower-icon {
+                width: 26px;
+                height: 26px;
+                font-size: 15px;
+            }
+            .tower-name {
+                font-size: 9px;
+            }
+            .tower-price {
+                font-size: 8px;
+                padding: 1px 6px;
+            }
+            .control-btn {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+        }
+
+        /* 触摸设备优化 */
         @media (hover: none) and (pointer: coarse) {
             .tower-card {
                 min-height: 60px;
@@ -611,170 +799,7 @@
                 padding-bottom: max(10px, env(safe-area-inset-bottom));
             }
         }
-    
-
-        /* ===== 移动端底部面板优化 ===== */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100% !important;
-                height: auto !important;
-                min-height: unset !important;
-                max-height: unset !important;
-                flex-direction: column !important;
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.5) !important;
-                padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-            }
-
-            .sidebar-header {
-                display: none !important;
-            }
-
-            /* 炮塔行：单行横向排列 */
-            .tower-list {
-                display: flex !important;
-                flex-direction: row !important;
-                overflow-x: auto !important;
-                overflow-y: hidden !important;
-                gap: 4px !important;
-                padding: 6px 8px !important;
-                -webkit-overflow-scrolling: touch !important;
-                scrollbar-width: none;
-                flex-shrink: 0;
-            }
-            .tower-list::-webkit-scrollbar { display: none; }
-
-            .tower-card {
-                flex-shrink: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 6px 10px !important;
-                border-radius: 10px !important;
-                min-width: 56px;
-                min-height: 52px;
-                gap: 2px;
-            }
-
-            .tower-header {
-                flex-direction: column !important;
-                gap: 2px !important;
-                margin-bottom: 0 !important;
-            }
-
-            .tower-icon {
-                width: 30px !important;
-                height: 30px !important;
-                font-size: 18px !important;
-            }
-
-            .tower-name {
-                font-size: 10px !important;
-                text-align: center;
-                white-space: nowrap;
-            }
-
-            .tower-stats {
-                display: none !important;
-            }
-
-            .tower-price {
-                margin-top: 0 !important;
-                padding: 2px 8px !important;
-                font-size: 9px !important;
-                border-radius: 8px !important;
-            }
-
-            /* 控制区：单行排列所有按钮 */
-            .control-area {
-                padding: 4px 8px 6px !important;
-                background: rgba(10, 10, 25, 0.9);
-                border-top: 1px solid rgba(102, 126, 234, 0.2);
-                overflow: hidden !important;
-                min-width: unset !important;
-            }
-
-            .wave-info {
-                display: none !important;
-            }
-
-            .mode-selector {
-                display: none !important;
-            }
-
-            .control-buttons {
-                display: flex !important;
-                flex-direction: row !important;
-                gap: 5px !important;
-                grid-template-columns: unset !important;
-                overflow-x: auto;
-                scrollbar-width: none;
-            }
-            .control-buttons::-webkit-scrollbar { display: none; }
-
-            .control-btn {
-                flex-shrink: 0;
-                padding: 8px 12px !important;
-                font-size: 12px !important;
-                border-radius: 16px !important;
-                white-space: nowrap;
-                min-height: 36px;
-                display: flex;
-                align-items: center;
-                gap: 3px;
-            }
-        }
-
-        /* 超小屏幕微调 */
-        @media (max-width: 380px) {
-            .tower-card {
-                min-width: 50px;
-                min-height: 46px;
-                padding: 4px 6px !important;
-            }
-            .tower-icon {
-                width: 26px !important;
-                height: 26px !important;
-                font-size: 15px !important;
-            }
-            .tower-name { font-size: 9px !important; }
-            .tower-price { font-size: 8px !important; padding: 1px 6px !important; }
-            .control-btn { padding: 6px 8px !important; font-size: 11px !important; }
-        }
-
-        /* 横屏手机保持原有布局 */
-        @media (max-width: 768px) and (orientation: landscape) {
-            .sidebar {
-                width: 200px !important;
-                height: auto !important;
-                flex-direction: column !important;
-            }
-            .tower-list {
-                display: grid !important;
-                grid-template-columns: 1fr !important;
-                overflow-y: auto !important;
-                overflow-x: hidden !important;
-            }
-            .tower-card {
-                flex-shrink: unset;
-                min-width: unset;
-                min-height: unset;
-            }
-            .tower-stats {
-                display: grid !important;
-            }
-            .wave-info {
-                display: block !important;
-            }
-            .mode-selector {
-                display: flex !important;
-            }
-            .control-buttons {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-            }
-        }
-</style>
+    </style>
 </head>
 <body>
     <!-- ===== 主菜单 ===== -->
@@ -1153,61 +1178,39 @@
     let musicGain = null;
     let sfxGain = null;
 
-    // 音频就绪标志 - 在用户手势同步回调中设为 true
-    let audioReady = false;
-
-    // 初始化音频上下文（必须在用户手势的同步回调中调用）
+    // 初始化音频上下文（需要用户交互后调用）
     function initAudio() {
         if (audioCtx) {
-            // 如果已创建但被暂停（移动浏览器常见），尝试恢复
             if (audioCtx.state === 'suspended') {
-                audioCtx.resume().then(() => { audioReady = true; }).catch(() => {});
+                audioCtx.resume();
             }
             return;
         }
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            // 在 iOS Safari 上，new AudioContext 在用户手势中创建时 state 就是 running
-            // 在其他浏览器上可能需要 resume
             if (audioCtx.state === 'suspended') {
-                audioCtx.resume().then(() => { audioReady = true; }).catch(() => {});
-            } else {
-                audioReady = true;
+                audioCtx.resume();
             }
             masterGain = audioCtx.createGain();
             masterGain.gain.value = 1.0;
             masterGain.connect(audioCtx.destination);
 
             musicGain = audioCtx.createGain();
-            musicGain.gain.value = 0.4;
+            musicGain.gain.value = 0.5;
             musicGain.connect(masterGain);
 
             sfxGain = audioCtx.createGain();
-            sfxGain.gain.value = 0.8;
+            sfxGain.gain.value = 1.0;
             sfxGain.connect(masterGain);
         } catch(e) {
             console.warn('音频初始化失败:', e);
             audioCtx = null;
-            audioReady = false;
         }
-    }
-
-    // 播放音效前的统一检查 - 确保 audioCtx 可用并恢复
-    function ensureAudio() {
-        if (!audioCtx) {
-            initAudio();
-        }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            // 同步调用 resume，虽然返回 Promise，但大多数浏览器在用户手势中会同步恢复
-            audioCtx.resume().catch(() => {});
-        }
-        return audioCtx && audioReady;
     }
 
     // 切换背景音乐
     function toggleMusic() {
         initAudio();
-        ensureAudio();
         musicEnabled = !musicEnabled;
         const btn = document.getElementById('musicBtn');
         btn.textContent = musicEnabled ? '🎵' : '🔇';
@@ -1222,7 +1225,6 @@
     // 切换音效
     function toggleSfx() {
         initAudio();
-        ensureAudio();
         sfxEnabled = !sfxEnabled;
         const btn = document.getElementById('sfxBtn');
         btn.textContent = sfxEnabled ? '🔊' : '🔇';
@@ -1327,39 +1329,39 @@
 
     // 基础炮塔射击 - 短促的"嘭"声
     function sfxShootBasic() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'square';
         osc.frequency.setValueAtTime(200, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-    }
-
-    // 冰冻塔射击 - 清脆的"叮"声
-    function sfxShootIce() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
         osc.connect(gain);
         gain.connect(sfxGain);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.15);
     }
 
+    // 冰冻塔射击 - 清脆的"叮"声
+    function sfxShootIce() {
+        if (!sfxEnabled || !audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(sfxGain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    }
+
     // 火焰塔射击 - 低沉的"呼"声
     function sfxShootFire() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const bufferSize = audioCtx.sampleRate * 0.2;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -1373,7 +1375,7 @@
         filter.frequency.setValueAtTime(600, audioCtx.currentTime);
         filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.45, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
         noise.connect(filter);
         filter.connect(gain);
@@ -1383,13 +1385,13 @@
 
     // 激光塔射击 - 高频"滋"声
     function sfxShootLaser() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(2000, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.08);
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'bandpass';
@@ -1404,7 +1406,7 @@
 
     // 超级激光 - 能量充能+释放声
     function sfxShootSuper() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         // 充能声
         const osc1 = audioCtx.createOscillator();
         osc1.type = 'sine';
@@ -1436,7 +1438,7 @@
 
     // 超级星舰射击音效 - 强力脉冲波
     function sfxShootStarship() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         // 低频冲击波
         const osc1 = audioCtx.createOscillator();
         osc1.type = 'sawtooth';
@@ -1466,23 +1468,23 @@
 
     // 怪物受击音效
     function sfxHit() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(300, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
         osc.connect(gain);
         gain.connect(sfxGain);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.06);
+        osc.stop(audioCtx.currentTime + 0.1);
     }
 
     // 怪物死亡音效 - 爆炸声
     function sfxExplosion(big) {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const duration = big ? 0.5 : 0.25;
         const bufferSize = audioCtx.sampleRate * duration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -1506,7 +1508,7 @@
 
     // 波次开始音效 - 号角声
     function sfxWaveStart() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const notes = [330, 440, 550];
         notes.forEach((freq, i) => {
             const osc = audioCtx.createOscillator();
@@ -1515,7 +1517,7 @@
             const gain = audioCtx.createGain();
             const t = audioCtx.currentTime + i * 0.15;
             gain.gain.setValueAtTime(0.01, t);
-            gain.gain.linearRampToValueAtTime(0.25, t + 0.05);
+            gain.gain.linearRampToValueAtTime(0.3, t + 0.05);
             gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'lowpass';
@@ -1530,49 +1532,49 @@
 
     // UI按钮点击音效
     function sfxClick() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sine';
         osc.frequency.value = 800;
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
         osc.connect(gain);
         gain.connect(sfxGain);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.06);
+        osc.stop(audioCtx.currentTime + 0.1);
     }
 
     // 放置炮塔音效
     function sfxPlace() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(400, audioCtx.currentTime);
         osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1);
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
         osc.connect(gain);
         gain.connect(sfxGain);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
+        osc.stop(audioCtx.currentTime + 0.2);
     }
 
     // 金币不足音效
     function sfxNoGold() {
-        if (!sfxEnabled) return; if (!ensureAudio()) return;
+        if (!sfxEnabled || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         osc.type = 'square';
         osc.frequency.setValueAtTime(200, audioCtx.currentTime);
         osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
         const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
         osc.connect(gain);
         gain.connect(sfxGain);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
+        osc.stop(audioCtx.currentTime + 0.3);
     }
 
     // ============================================
@@ -2001,11 +2003,10 @@
     // ============================================
     function initStars() {
         game.stars = [];
-        const { width: sw, height: sh } = getCanvasLogicalSize();
         for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
             game.stars.push({
-                x: Math.random() * sw,
-                y: Math.random() * sh,
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
                 size: Math.random() * 2.5 + 0.5,
                 brightness: Math.random(),
                 twinkleSpeed: 0.01 + Math.random() * 0.03,
@@ -2017,20 +2018,19 @@
     function drawStarField() {
         // 深空背景渐变
         const bgGrad = ctx.createRadialGradient(
-            getCanvasLogicalSize().width / 2, getCanvasLogicalSize().height / 2, 0,
-            getCanvasLogicalSize().width / 2, getCanvasLogicalSize().height / 2, Math.max(getCanvasLogicalSize().width, getCanvasLogicalSize().height)
+            canvas.width / 2, canvas.height / 2, 0,
+            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height)
         );
         bgGrad.addColorStop(0, '#0f0f2e');
         bgGrad.addColorStop(0.5, '#0a0a1e');
         bgGrad.addColorStop(1, '#050510');
         ctx.fillStyle = bgGrad;
-        const { width: cw, height: ch } = getCanvasLogicalSize();
-        ctx.fillRect(0, 0, cw, ch);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // 星云效果
-        drawNebula(cw * 0.3, ch * 0.4, 200, 'rgba(102, 50, 150, 0.04)');
-        drawNebula(cw * 0.7, ch * 0.6, 250, 'rgba(50, 80, 150, 0.03)');
-        drawNebula(cw * 0.5, ch * 0.2, 180, 'rgba(150, 50, 80, 0.03)');
+        drawNebula(canvas.width * 0.3, canvas.height * 0.4, 200, 'rgba(102, 50, 150, 0.04)');
+        drawNebula(canvas.width * 0.7, canvas.height * 0.6, 250, 'rgba(50, 80, 150, 0.03)');
+        drawNebula(canvas.width * 0.5, canvas.height * 0.2, 180, 'rgba(150, 50, 80, 0.03)');
 
         // 绘制星星
         const now = Date.now() / 1000;
@@ -2075,8 +2075,8 @@
             let attempts = 0;
 
             do {
-                dx = Math.random() * getCanvasLogicalSize().width;
-                dy = Math.random() * getCanvasLogicalSize().height;
+                dx = Math.random() * canvas.width;
+                dy = Math.random() * canvas.height;
                 valid = true;
 
                 // 检查是否离路径太近
@@ -2177,9 +2177,8 @@
     function generatePath(typeKey) {
         game.path = [];
         const cs = CONFIG.CELL_SIZE;
-        const { width: cw, height: ch } = getCanvasLogicalSize();
-        const cols = Math.floor(cw / cs);
-        const rows = Math.floor(ch / cs);
+        const cols = Math.floor(canvas.width / cs);
+        const rows = Math.floor(canvas.height / cs);
 
         // 如果没有指定类型，随机选择
         const pathType = typeKey || PATH_TYPES[Math.floor(Math.random() * PATH_TYPES.length)].key;
@@ -3055,19 +3054,18 @@
     // 网格绘制
     // ============================================
     function drawGrid() {
-        const { width: gw, height: gh } = getCanvasLogicalSize();
         ctx.strokeStyle = 'rgba(100, 120, 180, 0.06)';
         ctx.lineWidth = 1;
-        for (let x = 0; x < gw; x += CONFIG.CELL_SIZE) {
+        for (let x = 0; x < canvas.width; x += CONFIG.CELL_SIZE) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, gh);
+            ctx.lineTo(x, canvas.height);
             ctx.stroke();
         }
-        for (let y = 0; y < gh; y += CONFIG.CELL_SIZE) {
+        for (let y = 0; y < canvas.height; y += CONFIG.CELL_SIZE) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(gw, y);
+            ctx.lineTo(canvas.width, y);
             ctx.stroke();
         }
     }
@@ -3183,15 +3181,8 @@
 
     function resize() {
         const container = canvas.parentElement;
-        const dpr = window.devicePixelRatio || 1;
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        // 使用 devicePixelRatio 保证高清屏清晰度
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
         // 保存当前路径类型，resize时不随机改变路径
         if (game.path.length > 0) {
             const currentPathKey = PATH_TYPES[game.pathTypeIdx]?.key;
@@ -3208,14 +3199,6 @@
     // 炮塔选择与放置
     // ============================================
     function selectTower(type) {
-        // 再次点击同一个炮塔则取消选中
-        if (game.selected === type) {
-            game.selected = null;
-            game.removeMode = false;
-            document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
-            sfxClick();
-            return;
-        }
         game.selected = type;
         game.removeMode = false;
         sfxClick();
@@ -3371,7 +3354,6 @@
     // ============================================
     function startWave() {
         initAudio();
-        ensureAudio();
         clearTimeout(game.spawnTimer);
         clearTimeout(game.autoTimer);
 
@@ -4109,8 +4091,7 @@
         }
 
         // 清空画布
-        const logicalSize = getCanvasLogicalSize();
-        ctx.clearRect(-10, -10, logicalSize.width + 20, logicalSize.height + 20);
+        ctx.clearRect(-10, -10, canvas.width + 20, canvas.height + 20);
 
         // 星空背景
         drawStarField();
@@ -4180,12 +4161,6 @@
         ctx.restore();
     }
 
-    // 获取 canvas 的逻辑尺寸（CSS像素）
-    function getCanvasLogicalSize() {
-        const dpr = window.devicePixelRatio || 1;
-        return { width: canvas.width / dpr, height: canvas.height / dpr };
-    }
-
     // ============================================
     // 游戏主循环
     // ============================================
@@ -4200,38 +4175,21 @@
     // ============================================
     canvas.addEventListener('click', e => {
         initAudio();
-        ensureAudio();
         const r = canvas.getBoundingClientRect();
-        const x = e.clientX - r.left;
-        const y = e.clientY - r.top;
-        if (game.removeMode) {
-            removeTower(x, y);
-        } else if (game.selected) {
-            placeTower(x, y);
-        }
-    });
-
-    // 右键取消选中炮塔
-    canvas.addEventListener('contextmenu', e => {
-        e.preventDefault();
-        game.selected = null;
-        game.removeMode = false;
-        document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
-    });
-
-    // ESC键取消选中炮塔
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
-            game.selected = null;
-            game.removeMode = false;
-            document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
-        }
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
+        const x = (e.clientX - r.left) * scaleX;
+        const y = (e.clientY - r.top) * scaleY;
+        if (game.removeMode) removeTower(x, y);
+        else placeTower(x, y);
     });
 
     canvas.addEventListener('mousemove', e => {
         const r = canvas.getBoundingClientRect();
-        game.mouseX = e.clientX - r.left;
-        game.mouseY = e.clientY - r.top;
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
+        game.mouseX = (e.clientX - r.left) * scaleX;
+        game.mouseY = (e.clientY - r.top) * scaleY;
     });
 
     canvas.addEventListener('mouseleave', () => {
@@ -4242,11 +4200,12 @@
     canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         initAudio();
-        ensureAudio();
         const r = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
         const t = e.touches[0];
-        const x = t.clientX - r.left;
-        const y = t.clientY - r.top;
+        const x = (t.clientX - r.left) * scaleX;
+        const y = (t.clientY - r.top) * scaleY;
         game.mouseX = x;
         game.mouseY = y;
         if (game.removeMode) removeTower(x, y);
@@ -4256,9 +4215,11 @@
     canvas.addEventListener('touchmove', e => {
         e.preventDefault();
         const r = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
         const t = e.touches[0];
-        game.mouseX = t.clientX - r.left;
-        game.mouseY = t.clientY - r.top;
+        game.mouseX = (t.clientX - r.left) * scaleX;
+        game.mouseY = (t.clientY - r.top) * scaleY;
     }, {passive: false});
 
     canvas.addEventListener('touchend', e => {
@@ -4268,24 +4229,15 @@
 
     window.addEventListener('resize', resize);
 
-    // 全局触摸/点击事件确保音频上下文在移动端正常工作
-    // 使用 once: true 在首次交互后移除监听，避免性能开销
-    function firstInteraction() {
-        initAudio();
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => { audioReady = true; }).catch(() => {});
-        } else if (audioCtx) {
-            audioReady = true;
-        }
-    }
-    document.addEventListener('touchstart', firstInteraction, { once: true, passive: true });
-    document.addEventListener('click', firstInteraction, { once: true, passive: true });
-    document.addEventListener('keydown', firstInteraction, { once: true, passive: true });
+    // 移动端：首次用户交互时激活音频
+    function activateAudio() { initAudio(); }
+    document.addEventListener('touchstart', activateAudio, { once: true, passive: true });
+    document.addEventListener('click', activateAudio, { once: true, passive: true });
 
-    // 处理页面可见性变化（切换回页面时恢复音频）
+    // 页面从后台恢复时重新激活音频
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => { audioReady = true; }).catch(() => {});
+            audioCtx.resume();
         }
     });
 
