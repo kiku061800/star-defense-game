@@ -3160,6 +3160,14 @@
     // 炮塔选择与放置
     // ============================================
     function selectTower(type) {
+        // 再次点击同一个炮塔则取消选中
+        if (game.selected === type) {
+            game.selected = null;
+            game.removeMode = false;
+            document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
+            sfxClick();
+            return;
+        }
         game.selected = type;
         game.removeMode = false;
         sfxClick();
@@ -4141,8 +4149,28 @@
         const scaleY = canvas.height / r.height;
         const x = (e.clientX - r.left) * scaleX;
         const y = (e.clientY - r.top) * scaleY;
-        if (game.removeMode) removeTower(x, y);
-        else placeTower(x, y);
+        if (game.removeMode) {
+            removeTower(x, y);
+        } else if (game.selected) {
+            placeTower(x, y);
+        }
+    });
+
+    // 右键取消选中炮塔
+    canvas.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        game.selected = null;
+        game.removeMode = false;
+        document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
+    });
+
+    // ESC键取消选中炮塔
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            game.selected = null;
+            game.removeMode = false;
+            document.querySelectorAll('.tower-card').forEach(c => c.classList.remove('selected'));
+        }
     });
 
     canvas.addEventListener('mousemove', e => {
