@@ -1168,31 +1168,39 @@
     const ctx = canvas.getContext('2d');
 
     // ============================================
-    // 音频系统 - 全新重写版
+    // 音频系统 - 最终修复版
     // ============================================
     let musicEnabled = false;
     let sfxEnabled = true;
     let bgMusicTimer = null;
     let bgMusicOscs = [];
+    let _audioCtx = null; // 全局唯一AudioContext，在用户手势中创建
 
-    // 每次播放音效时获取/创建一个可用的 AudioContext
-    function getAudioCtx() {
+    // 在用户手势中调用，创建全局AudioContext
+    // 手机上只有在用户点击/触摸的同步回调中创建的AudioContext才是running状态
+    function initAudio() {
+        if (_audioCtx) return;
         try {
             const AC = window.AudioContext || window.webkitAudioContext;
-            if (!AC) return null;
-            const ctx = new AC();
-            return ctx;
+            if (!AC) return;
+            _audioCtx = new AC();
         } catch(e) {
-            return null;
+            _audioCtx = null;
         }
+    }
+
+    // 获取全局AudioContext（必须在initAudio之后调用）
+    function getCtx() {
+        return _audioCtx;
     }
 
     // 播放一个简单的音调
     function playTone(freq, type, duration, vol, freqEnd) {
         if (!sfxEnabled) return;
-        const ctx = getAudioCtx();
+        const ctx = getCtx();
         if (!ctx) return;
         try {
+            if (ctx.state === 'suspended') { ctx.resume(); return; }
             const osc = ctx.createOscillator();
             osc.type = type;
             osc.frequency.setValueAtTime(freq, ctx.currentTime);
@@ -1210,9 +1218,10 @@
     // 播放噪声
     function playNoise(duration, vol, filterFreq) {
         if (!sfxEnabled) return;
-        const ctx = getAudioCtx();
+        const ctx = getCtx();
         if (!ctx) return;
         try {
+            if (ctx.state === 'suspended') { ctx.resume(); return; }
             const size = ctx.sampleRate * duration;
             const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -1234,9 +1243,8 @@
         } catch(e) {}
     }
 
-    function initAudio() {} // 兼容旧调用，不再需要
-
     function toggleMusic() {
+        initAudio();
         musicEnabled = !musicEnabled;
         const btn = document.getElementById('musicBtn');
         btn.textContent = musicEnabled ? '🎵' : '🔇';
@@ -1245,6 +1253,7 @@
     }
 
     function toggleSfx() {
+        initAudio();
         sfxEnabled = !sfxEnabled;
         const btn = document.getElementById('sfxBtn');
         btn.textContent = sfxEnabled ? '🔊' : '🔇';
@@ -1257,7 +1266,7 @@
     function startBGMusic() {
         if (!musicEnabled) return;
         stopBGMusic();
-        const ctx = getAudioCtx();
+        const ctx = getCtx();
         if (!ctx) return;
         try {
             // 柔和的和弦 pad
@@ -1282,7 +1291,7 @@
             let idx = 0;
             function playNote() {
                 if (!musicEnabled) return;
-                const c = getAudioCtx();
+                const c = getCtx();
                 if (!c) return;
                 try {
                     const o = c.createOscillator();
