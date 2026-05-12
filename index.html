@@ -1168,73 +1168,83 @@
     const ctx = canvas.getContext('2d');
 
     // ============================================
-    // 音频系统 - Web Audio API
+    // 音频系统 - 全新重写版
     // ============================================
-    let audioCtx = null;
     let musicEnabled = false;
     let sfxEnabled = true;
-    let musicNodes = [];  // 音乐节点引用
-    let masterGain = null;
-    let musicGain = null;
-    let sfxGain = null;
+    let bgMusicTimer = null;
+    let bgMusicOscs = [];
 
-    // 初始化音频上下文（需要用户交互后调用）
-    function initAudio() {
-        if (audioCtx) {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return;
-        }
+    // 每次播放音效时获取/创建一个可用的 AudioContext
+    function getAudioCtx() {
         try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            // iOS Safari: 必须在用户手势中 resume
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = 1.0;
-            masterGain.connect(audioCtx.destination);
-
-            musicGain = audioCtx.createGain();
-            musicGain.gain.value = 0.5;
-            musicGain.connect(masterGain);
-
-            sfxGain = audioCtx.createGain();
-            sfxGain.gain.value = 1.0;
-            sfxGain.connect(masterGain);
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            const ctx = new AC();
+            return ctx;
         } catch(e) {
-            console.warn('音频初始化失败:', e);
-            audioCtx = null;
+            return null;
         }
     }
 
-    // 安全播放音效 - 确保 audioCtx 可用
-    function safeAudio() {
-        if (!audioCtx) { initAudio(); }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        return !!audioCtx;
+    // 播放一个简单的音调
+    function playTone(freq, type, duration, vol, freqEnd) {
+        if (!sfxEnabled) return;
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        try {
+            const osc = ctx.createOscillator();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            if (freqEnd) osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), ctx.currentTime + duration);
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(vol, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + duration + 0.05);
+        } catch(e) {}
     }
 
-    // 切换背景音乐
+    // 播放噪声
+    function playNoise(duration, vol, filterFreq) {
+        if (!sfxEnabled) return;
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        try {
+            const size = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < size; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / size, 1.5);
+            }
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = filterFreq || 800;
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(vol, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            src.start();
+        } catch(e) {}
+    }
+
+    function initAudio() {} // 兼容旧调用，不再需要
+
     function toggleMusic() {
-        initAudio();
         musicEnabled = !musicEnabled;
         const btn = document.getElementById('musicBtn');
         btn.textContent = musicEnabled ? '🎵' : '🔇';
         btn.classList.toggle('off', !musicEnabled);
-        if (musicEnabled) {
-            startBGMusic();
-        } else {
-            stopBGMusic();
-        }
+        if (musicEnabled) { startBGMusic(); } else { stopBGMusic(); }
     }
 
-    // 切换音效
     function toggleSfx() {
-        initAudio();
         sfxEnabled = !sfxEnabled;
         const btn = document.getElementById('sfxBtn');
         btn.textContent = sfxEnabled ? '🔊' : '🔇';
@@ -1242,350 +1252,113 @@
     }
 
     // ============================================
-    // 背景音乐生成（科幻/太空风格环境音乐）
+    // 背景音乐
     // ============================================
     function startBGMusic() {
-        if (!audioCtx || !musicEnabled) return;
+        if (!musicEnabled) return;
         stopBGMusic();
-
-        // 低沉的pad音色 - 使用多个去谐振荡器
-        const padFreqs = [55, 82.41, 110, 164.81]; // A1, E2, A2, E3
-        padFreqs.forEach((freq, i) => {
-            const osc = audioCtx.createOscillator();
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-
-            // 轻微去谐产生丰富的pad音色
-            const detune = audioCtx.createOscillator();
-            detune.type = 'sine';
-            detune.frequency.value = freq * 1.003;
-
-            const gain = audioCtx.createGain();
-            gain.gain.value = 0.06;
-
-            // 低通滤波器使声音更柔和
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = 400;
-            filter.Q.value = 1;
-
-            osc.connect(filter);
-            detune.connect(filter);
-            filter.connect(gain);
-            gain.connect(musicGain);
-
-            osc.start();
-            detune.start();
-
-            // LFO调制滤波器频率
-            const lfo = audioCtx.createOscillator();
-            lfo.type = 'sine';
-            lfo.frequency.value = 0.05 + i * 0.02;
-            const lfoGain = audioCtx.createGain();
-            lfoGain.gain.value = 100;
-            lfo.connect(lfoGain);
-            lfoGain.connect(filter.frequency);
-            lfo.start();
-
-            musicNodes.push(osc, detune, lfo);
-        });
-
-        // 简单的旋律循环
-        const melodyNotes = [220, 261.63, 329.63, 293.66, 220, 196, 261.63, 329.63];
-        let noteIdx = 0;
-
-        function playMelodyNote() {
-            if (!musicEnabled || !audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            osc.type = 'triangle';
-            osc.frequency.value = melodyNotes[noteIdx % melodyNotes.length];
-
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 0.5);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 3);
-
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = 800;
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(musicGain);
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + 3.5);
-
-            noteIdx++;
-            game.melodyTimer = setTimeout(playMelodyNote, 3000);
-        }
-
-        game.melodyTimer = setTimeout(playMelodyNote, 500);
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        try {
+            // 柔和的和弦 pad
+            const freqs = [110, 164.81, 220, 329.63];
+            freqs.forEach(f => {
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = f;
+                const g = ctx.createGain();
+                g.gain.value = 0.04;
+                const flt = ctx.createBiquadFilter();
+                flt.type = 'lowpass';
+                flt.frequency.value = 500;
+                osc.connect(flt);
+                flt.connect(g);
+                g.connect(ctx.destination);
+                osc.start();
+                bgMusicOscs.push(osc);
+            });
+            // 旋律循环
+            const melody = [220, 261.63, 329.63, 293.66, 220, 196, 261.63, 329.63];
+            let idx = 0;
+            function playNote() {
+                if (!musicEnabled) return;
+                const c = getAudioCtx();
+                if (!c) return;
+                try {
+                    const o = c.createOscillator();
+                    o.type = 'triangle';
+                    o.frequency.value = melody[idx % melody.length];
+                    const g = c.createGain();
+                    g.gain.setValueAtTime(0, c.currentTime);
+                    g.gain.linearRampToValueAtTime(0.06, c.currentTime + 0.3);
+                    g.gain.linearRampToValueAtTime(0, c.currentTime + 2.5);
+                    o.connect(g);
+                    g.connect(c.destination);
+                    o.start(c.currentTime);
+                    o.stop(c.currentTime + 3);
+                } catch(e) {}
+                idx++;
+                bgMusicTimer = setTimeout(playNote, 3000);
+            }
+            bgMusicTimer = setTimeout(playNote, 500);
+        } catch(e) {}
     }
 
     function stopBGMusic() {
-        musicNodes.forEach(node => {
-            try { node.stop(); } catch(e) {}
-        });
-        musicNodes = [];
-        if (game.melodyTimer) {
-            clearTimeout(game.melodyTimer);
-            game.melodyTimer = null;
-        }
+        bgMusicOscs.forEach(o => { try { o.stop(); } catch(e) {} });
+        bgMusicOscs = [];
+        if (bgMusicTimer) { clearTimeout(bgMusicTimer); bgMusicTimer = null; }
     }
 
     // ============================================
-    // 音效生成系统
+    // 音效 - 全部重写
     // ============================================
 
-    // 基础炮塔射击 - 短促的"嘭"声
-    function sfxShootBasic() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
-    }
+    // 基础炮塔射击
+    function sfxShootBasic() { playTone(200, 'square', 0.12, 0.5, 80); }
 
-    // 冰冻塔射击 - 清脆的"叮"声
-    function sfxShootIce() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
-    }
+    // 冰冻塔射击
+    function sfxShootIce() { playTone(1200, 'sine', 0.2, 0.4, 800); }
 
-    // 火焰塔射击 - 低沉的"呼"声
-    function sfxShootFire() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const bufferSize = audioCtx.sampleRate * 0.2;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-        }
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(600, audioCtx.currentTime);
-        filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        noise.start();
-    }
+    // 火焰塔射击
+    function sfxShootFire() { playNoise(0.25, 0.4, 600); }
 
-    // 激光塔射击 - 高频"滋"声
-    function sfxShootLaser() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(2000, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.08);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 1500;
-        filter.Q.value = 5;
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-    }
+    // 激光塔射击
+    function sfxShootLaser() { playTone(2000, 'sawtooth', 0.1, 0.35, 500); }
 
-    // 超级激光 - 能量充能+释放声
+    // 超级激光
     function sfxShootSuper() {
-        if (!sfxEnabled || !safeAudio()) return;
-        // 充能声
-        const osc1 = audioCtx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(200, audioCtx.currentTime);
-        osc1.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.15);
-        const gain1 = audioCtx.createGain();
-        gain1.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain1.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-        osc1.connect(gain1);
-        gain1.connect(sfxGain);
-        osc1.start();
-        osc1.stop(audioCtx.currentTime + 0.3);
-
-        // 释放声
-        const osc2 = audioCtx.createOscillator();
-        osc2.type = 'square';
-        osc2.frequency.setValueAtTime(600, audioCtx.currentTime + 0.15);
-        osc2.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.35);
-        const gain2 = audioCtx.createGain();
-        gain2.gain.setValueAtTime(0.01, audioCtx.currentTime);
-        gain2.gain.setValueAtTime(0.25, audioCtx.currentTime + 0.15);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
-        osc2.connect(gain2);
-        gain2.connect(sfxGain);
-        osc2.start(audioCtx.currentTime + 0.15);
-        osc2.stop(audioCtx.currentTime + 0.4);
+        playTone(200, 'sine', 0.15, 0.2, 800);
+        setTimeout(() => playTone(600, 'square', 0.2, 0.3, 100), 100);
     }
 
-    // 超级星舰射击音效 - 强力脉冲波
+    // 超级星舰
     function sfxShootStarship() {
-        if (!sfxEnabled || !safeAudio()) return;
-        // 低频冲击波
-        const osc1 = audioCtx.createOscillator();
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(80, audioCtx.currentTime);
-        osc1.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.08);
-        const gain1 = audioCtx.createGain();
-        gain1.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        osc1.connect(gain1);
-        gain1.connect(sfxGain);
-        osc1.start();
-        osc1.stop(audioCtx.currentTime + 0.1);
-
-        // 高频能量束
-        const osc2 = audioCtx.createOscillator();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1200, audioCtx.currentTime);
-        osc2.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.06);
-        const gain2 = audioCtx.createGain();
-        gain2.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        osc2.connect(gain2);
-        gain2.connect(sfxGain);
-        osc2.start();
-        osc2.stop(audioCtx.currentTime + 0.08);
+        playTone(80, 'sawtooth', 0.1, 0.3, 40);
+        playTone(1200, 'sine', 0.08, 0.2, 600);
     }
 
-    // 怪物受击音效
-    function sfxHit() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-    }
+    // 怪物受击
+    function sfxHit() { playTone(300, 'triangle', 0.08, 0.3, 100); }
 
-    // 怪物死亡音效 - 爆炸声
-    function sfxExplosion(big) {
-        if (!sfxEnabled || !safeAudio()) return;
-        const duration = big ? 0.5 : 0.25;
-        const bufferSize = audioCtx.sampleRate * duration;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-        }
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = big ? 800 : 1200;
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(big ? 0.4 : 0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        noise.start();
-    }
+    // 怪物死亡爆炸
+    function sfxExplosion(big) { playNoise(big ? 0.5 : 0.25, big ? 0.4 : 0.25, big ? 800 : 1200); }
 
-    // 波次开始音效 - 号角声
+    // 波次开始
     function sfxWaveStart() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const notes = [330, 440, 550];
-        notes.forEach((freq, i) => {
-            const osc = audioCtx.createOscillator();
-            osc.type = 'square';
-            osc.frequency.value = freq;
-            const gain = audioCtx.createGain();
-            const t = audioCtx.currentTime + i * 0.15;
-            gain.gain.setValueAtTime(0.01, t);
-            gain.gain.linearRampToValueAtTime(0.3, t + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = 1000;
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(sfxGain);
-            osc.start(t);
-            osc.stop(t + 0.35);
-        });
+        playTone(330, 'square', 0.3, 0.25);
+        setTimeout(() => playTone(440, 'square', 0.3, 0.25), 120);
+        setTimeout(() => playTone(550, 'square', 0.35, 0.25), 240);
     }
 
-    // UI按钮点击音效
-    function sfxClick() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = 800;
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-    }
+    // UI点击
+    function sfxClick() { playTone(800, 'sine', 0.08, 0.3); }
 
-    // 放置炮塔音效
-    function sfxPlace() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
-    }
+    // 放置炮塔
+    function sfxPlace() { playTone(400, 'sine', 0.15, 0.35, 700); }
 
-    // 金币不足音效
-    function sfxNoGold() {
-        if (!sfxEnabled || !safeAudio()) return;
-        const osc = audioCtx.createOscillator();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.3);
-    }
+    // 金币不足
+    function sfxNoGold() { playTone(200, 'square', 0.25, 0.3, 100); }
 
     // ============================================
     // 粒子系统
