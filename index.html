@@ -2001,10 +2001,11 @@
     // ============================================
     function initStars() {
         game.stars = [];
+        const { width: sw, height: sh } = getCanvasLogicalSize();
         for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
             game.stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
+                x: Math.random() * sw,
+                y: Math.random() * sh,
                 size: Math.random() * 2.5 + 0.5,
                 brightness: Math.random(),
                 twinkleSpeed: 0.01 + Math.random() * 0.03,
@@ -3054,18 +3055,19 @@
     // 网格绘制
     // ============================================
     function drawGrid() {
+        const { width: gw, height: gh } = getCanvasLogicalSize();
         ctx.strokeStyle = 'rgba(100, 120, 180, 0.06)';
         ctx.lineWidth = 1;
-        for (let x = 0; x < canvas.width; x += CONFIG.CELL_SIZE) {
+        for (let x = 0; x < gw; x += CONFIG.CELL_SIZE) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
+            ctx.lineTo(x, gh);
             ctx.stroke();
         }
-        for (let y = 0; y < canvas.height; y += CONFIG.CELL_SIZE) {
+        for (let y = 0; y < gh; y += CONFIG.CELL_SIZE) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
+            ctx.lineTo(gw, y);
             ctx.stroke();
         }
     }
