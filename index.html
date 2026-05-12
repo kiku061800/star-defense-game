@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
     <title>星际塔防 - 增强版</title>
     <style>
         * {
@@ -18,6 +20,12 @@
             overflow: hidden;
             font-family: 'Microsoft YaHei', sans-serif;
             background: #0a0a1a;
+            -webkit-overflow-scrolling: touch;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         /* 游戏容器 */
@@ -132,10 +140,12 @@
         .tower-list {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 10px;
             display: grid;
             grid-template-columns: 1fr;
             gap: 8px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .tower-card {
@@ -207,6 +217,8 @@
             padding: 10px;
             background: rgba(10, 10, 25, 0.9);
             border-top: 1px solid rgba(102, 126, 234, 0.2);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .wave-info {
@@ -322,6 +334,9 @@
             max-width: 420px;
             width: 90%;
             padding: 40px 30px;
+            max-height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .menu-title {
@@ -577,6 +592,8 @@
             .sidebar {
                 width: 100%;
                 height: 180px;
+                min-height: 150px;
+                max-height: 40vh;
                 flex-direction: row;
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
             }
@@ -590,6 +607,9 @@
                 grid-template-columns: repeat(3, 1fr);
                 padding: 8px;
                 gap: 6px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
             }
 
             .tower-card {
@@ -705,12 +725,17 @@
                 font-size: 12px;
             }
             .sidebar {
-                height: 160px;
+                height: 150px;
+                min-height: 130px;
+                max-height: 35vh;
             }
             .tower-list {
                 grid-template-columns: repeat(3, 1fr);
                 gap: 4px;
                 padding: 4px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
             }
             .tower-card {
                 padding: 4px;
@@ -1154,24 +1179,43 @@
 
     // 初始化音频上下文（需要用户交互后调用）
     function initAudio() {
-        if (audioCtx) return;
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        masterGain = audioCtx.createGain();
-        masterGain.gain.value = 0.5;
-        masterGain.connect(audioCtx.destination);
+        if (audioCtx) {
+            // 如果已创建但被暂停（移动浏览器常见），恢复它
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return;
+        }
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.5;
+            masterGain.connect(audioCtx.destination);
 
-        musicGain = audioCtx.createGain();
-        musicGain.gain.value = 0.3;
-        musicGain.connect(masterGain);
+            musicGain = audioCtx.createGain();
+            musicGain.gain.value = 0.3;
+            musicGain.connect(masterGain);
 
-        sfxGain = audioCtx.createGain();
-        sfxGain.gain.value = 0.5;
-        sfxGain.connect(masterGain);
+            sfxGain = audioCtx.createGain();
+            sfxGain.gain.value = 0.5;
+            sfxGain.connect(masterGain);
+        } catch(e) {
+            console.warn('音频初始化失败:', e);
+            audioCtx = null;
+        }
+    }
+
+    // 确保音频上下文在用户交互时恢复（移动端兼容）
+    function ensureAudioResumed() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
     }
 
     // 切换背景音乐
     function toggleMusic() {
         initAudio();
+        ensureAudioResumed();
         musicEnabled = !musicEnabled;
         const btn = document.getElementById('musicBtn');
         btn.textContent = musicEnabled ? '🎵' : '🔇';
@@ -1186,6 +1230,7 @@
     // 切换音效
     function toggleSfx() {
         initAudio();
+        ensureAudioResumed();
         sfxEnabled = !sfxEnabled;
         const btn = document.getElementById('sfxBtn');
         btn.textContent = sfxEnabled ? '🔊' : '🔇';
@@ -1979,19 +2024,20 @@
     function drawStarField() {
         // 深空背景渐变
         const bgGrad = ctx.createRadialGradient(
-            canvas.width / 2, canvas.height / 2, 0,
-            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height)
+            getCanvasLogicalSize().width / 2, getCanvasLogicalSize().height / 2, 0,
+            getCanvasLogicalSize().width / 2, getCanvasLogicalSize().height / 2, Math.max(getCanvasLogicalSize().width, getCanvasLogicalSize().height)
         );
         bgGrad.addColorStop(0, '#0f0f2e');
         bgGrad.addColorStop(0.5, '#0a0a1e');
         bgGrad.addColorStop(1, '#050510');
         ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const { width: cw, height: ch } = getCanvasLogicalSize();
+        ctx.fillRect(0, 0, cw, ch);
 
         // 星云效果
-        drawNebula(canvas.width * 0.3, canvas.height * 0.4, 200, 'rgba(102, 50, 150, 0.04)');
-        drawNebula(canvas.width * 0.7, canvas.height * 0.6, 250, 'rgba(50, 80, 150, 0.03)');
-        drawNebula(canvas.width * 0.5, canvas.height * 0.2, 180, 'rgba(150, 50, 80, 0.03)');
+        drawNebula(cw * 0.3, ch * 0.4, 200, 'rgba(102, 50, 150, 0.04)');
+        drawNebula(cw * 0.7, ch * 0.6, 250, 'rgba(50, 80, 150, 0.03)');
+        drawNebula(cw * 0.5, ch * 0.2, 180, 'rgba(150, 50, 80, 0.03)');
 
         // 绘制星星
         const now = Date.now() / 1000;
@@ -2036,8 +2082,8 @@
             let attempts = 0;
 
             do {
-                dx = Math.random() * canvas.width;
-                dy = Math.random() * canvas.height;
+                dx = Math.random() * getCanvasLogicalSize().width;
+                dy = Math.random() * getCanvasLogicalSize().height;
                 valid = true;
 
                 // 检查是否离路径太近
@@ -2138,8 +2184,9 @@
     function generatePath(typeKey) {
         game.path = [];
         const cs = CONFIG.CELL_SIZE;
-        const cols = Math.floor(canvas.width / cs);
-        const rows = Math.floor(canvas.height / cs);
+        const { width: cw, height: ch } = getCanvasLogicalSize();
+        const cols = Math.floor(cw / cs);
+        const rows = Math.floor(ch / cs);
 
         // 如果没有指定类型，随机选择
         const pathType = typeKey || PATH_TYPES[Math.floor(Math.random() * PATH_TYPES.length)].key;
@@ -3142,8 +3189,15 @@
 
     function resize() {
         const container = canvas.parentElement;
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        // 使用 devicePixelRatio 保证高清屏清晰度
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         // 保存当前路径类型，resize时不随机改变路径
         if (game.path.length > 0) {
             const currentPathKey = PATH_TYPES[game.pathTypeIdx]?.key;
@@ -3323,6 +3377,7 @@
     // ============================================
     function startWave() {
         initAudio();
+        ensureAudioResumed();
         clearTimeout(game.spawnTimer);
         clearTimeout(game.autoTimer);
 
@@ -4060,7 +4115,8 @@
         }
 
         // 清空画布
-        ctx.clearRect(-10, -10, canvas.width + 20, canvas.height + 20);
+        const logicalSize = getCanvasLogicalSize();
+        ctx.clearRect(-10, -10, logicalSize.width + 20, logicalSize.height + 20);
 
         // 星空背景
         drawStarField();
@@ -4130,6 +4186,12 @@
         ctx.restore();
     }
 
+    // 获取 canvas 的逻辑尺寸（CSS像素）
+    function getCanvasLogicalSize() {
+        const dpr = window.devicePixelRatio || 1;
+        return { width: canvas.width / dpr, height: canvas.height / dpr };
+    }
+
     // ============================================
     // 游戏主循环
     // ============================================
@@ -4144,11 +4206,10 @@
     // ============================================
     canvas.addEventListener('click', e => {
         initAudio();
+        ensureAudioResumed();
         const r = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / r.width;
-        const scaleY = canvas.height / r.height;
-        const x = (e.clientX - r.left) * scaleX;
-        const y = (e.clientY - r.top) * scaleY;
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
         if (game.removeMode) {
             removeTower(x, y);
         } else if (game.selected) {
@@ -4175,10 +4236,8 @@
 
     canvas.addEventListener('mousemove', e => {
         const r = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / r.width;
-        const scaleY = canvas.height / r.height;
-        game.mouseX = (e.clientX - r.left) * scaleX;
-        game.mouseY = (e.clientY - r.top) * scaleY;
+        game.mouseX = e.clientX - r.left;
+        game.mouseY = e.clientY - r.top;
     });
 
     canvas.addEventListener('mouseleave', () => {
@@ -4189,12 +4248,11 @@
     canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         initAudio();
+        ensureAudioResumed();
         const r = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / r.width;
-        const scaleY = canvas.height / r.height;
         const t = e.touches[0];
-        const x = (t.clientX - r.left) * scaleX;
-        const y = (t.clientY - r.top) * scaleY;
+        const x = t.clientX - r.left;
+        const y = t.clientY - r.top;
         game.mouseX = x;
         game.mouseY = y;
         if (game.removeMode) removeTower(x, y);
@@ -4204,11 +4262,9 @@
     canvas.addEventListener('touchmove', e => {
         e.preventDefault();
         const r = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / r.width;
-        const scaleY = canvas.height / r.height;
         const t = e.touches[0];
-        game.mouseX = (t.clientX - r.left) * scaleX;
-        game.mouseY = (t.clientY - r.top) * scaleY;
+        game.mouseX = t.clientX - r.left;
+        game.mouseY = t.clientY - r.top;
     }, {passive: false});
 
     canvas.addEventListener('touchend', e => {
@@ -4217,6 +4273,23 @@
     });
 
     window.addEventListener('resize', resize);
+
+    // 全局触摸/点击事件确保音频上下文在移动端正常工作
+    document.addEventListener('touchstart', function onFirstTouch() {
+        initAudio();
+        ensureAudioResumed();
+    }, { once: false, passive: true });
+    document.addEventListener('click', function onFirstClick() {
+        initAudio();
+        ensureAudioResumed();
+    }, { once: false, passive: true });
+
+    // 处理页面可见性变化（切换回页面时恢复音频）
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+    });
 
     // 启动游戏
     init();
